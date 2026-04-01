@@ -58,25 +58,31 @@ function createEncounterStore() {
 			maxHp: number;
 			ac: number | null;
 		}) {
-			update((s) => ({
-				...s,
-				combatants: [
-					...s.combatants,
-					{
-						id: nanoid(),
-						name: params.name,
-						initiative: null,
-						modifier: params.modifier,
-						type: params.type,
-						maxHp: params.maxHp,
-						currentHp: params.maxHp,
-						ac: params.ac,
-						conditions: [],
-						notes: "",
-						isExpanded: false,
-					},
-				].sort(sortByInitiative),
-			}));
+			update((s) => {
+				const battleStarted = s.combatants.some((c) => c.initiative !== null);
+				const initiative = battleStarted
+					? Math.floor(Math.random() * 20) + 1 + params.modifier
+					: null;
+				return {
+					...s,
+					combatants: [
+						...s.combatants,
+						{
+							id: nanoid(),
+							name: params.name,
+							initiative,
+							modifier: params.modifier,
+							type: params.type,
+							maxHp: params.maxHp,
+							currentHp: params.maxHp,
+							ac: params.ac,
+							conditions: [],
+							notes: "",
+							isExpanded: false,
+						},
+					].sort(sortByInitiative),
+				};
+			});
 		},
 
 		rollAllUnrolledInitiatives() {

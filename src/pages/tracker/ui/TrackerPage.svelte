@@ -38,7 +38,7 @@
 <div class="layout">
 	<!-- Top bar -->
 	<header class="top-bar">
-		<span class="app-name">D20 Planner</span>
+		<span class="app-name">Combat Planner</span>
 		<div class="round-chip" aria-live="polite" aria-label="Round {state.round}">
 			<span class="round-lbl">Round</span>
 			<span class="round-num">{state.round}</span>

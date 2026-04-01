@@ -108,33 +108,36 @@
 		>
 			{combatant.type === "pc" ? "PC" : "Monster"}
 		</span>
-		{#if editingInit}
-			<input
-				bind:this={initInputEl}
-				class="init-input"
-				type="number"
-				bind:value={initInputVal}
-				onblur={commitInit}
-				onkeydown={(e) => {
-					if (e.key === "Enter") commitInit();
-					if (e.key === "Escape") editingInit = false;
-				}}
-				onclick={(e) => e.stopPropagation()}
-				aria-label="Initiative value"
-			/>
-		{:else}
-			<button
-				class="inum"
-				onclick={startEditInit}
-				aria-label="Edit initiative, currently {combatant.initiative ?? 'unrolled'}"
-			>
-				{combatant.initiative ?? "—"}
-			</button>
-		{/if}
+		<div class="init-wrap">
+			<span class="init-lbl" aria-hidden="true">Initiative</span>
+			{#if editingInit}
+				<input
+					bind:this={initInputEl}
+					class="init-input"
+					type="number"
+					bind:value={initInputVal}
+					onblur={commitInit}
+					onkeydown={(e) => {
+						if (e.key === "Enter") commitInit();
+						if (e.key === "Escape") editingInit = false;
+					}}
+					onclick={(e) => e.stopPropagation()}
+					aria-label="Initiative value"
+				/>
+			{:else}
+				<button
+					class="inum"
+					onclick={startEditInit}
+					aria-label="Edit initiative, currently {combatant.initiative ?? 'unrolled'}"
+				>
+					{combatant.initiative ?? "—"}
+				</button>
+			{/if}
+		</div>
 	</div>
 
-	<!-- HP bar (always visible) -->
-	<div class="hp-row" aria-label="HP {combatant.currentHp} of {combatant.maxHp}">
+	<!-- HP bar + AC (always visible) -->
+	<div class="hp-row" aria-label="HP {combatant.currentHp} of {combatant.maxHp}{combatant.ac !== null ? `, AC ${combatant.ac}` : ''}">
 		<span class="hp-lbl" aria-hidden="true">HP</span>
 		<div class="hp-track" role="progressbar" aria-valuenow={hpPercent} aria-valuemin={0} aria-valuemax={100}>
 			<div class="hp-fill" style="width: {hpPercent}%; background: {hpColor};"></div>
@@ -142,6 +145,13 @@
 		<span class="hp-nums" aria-hidden="true">
 			<span class="cur">{combatant.currentHp}</span>/{combatant.maxHp}
 		</span>
+		{#if combatant.ac !== null}
+			<span class="hp-divider" aria-hidden="true"></span>
+			<span class="ac-stat" aria-hidden="true">
+				<span class="cur ac-num">{combatant.ac}</span>
+				<span class="hp-lbl">AC</span>
+			</span>
+		{/if}
 	</div>
 
 	{#if isExpanded}
@@ -173,18 +183,6 @@
 				{/each}
 			</div>
 		</div>
-
-		<!-- AC badge -->
-		{#if combatant.ac !== null}
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="stats-row" onclick={(e) => e.stopPropagation()}>
-				<div class="stat-badge" aria-label="Armor Class {combatant.ac}">
-					<span class="stat-num" aria-hidden="true">{combatant.ac}</span>
-					<span class="stat-lbl" aria-hidden="true">AC</span>
-				</div>
-			</div>
-		{/if}
 
 		<!-- Conditions + Notes toggle -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -281,14 +279,10 @@
 
 	@media (min-width: 640px) {
 		.card {
-			box-shadow: none;
-			border-radius: 10px;
-			border: 1px solid var(--border);
+			box-shadow: 0 2px 8px rgba(24, 19, 14, 0.08);
 		}
 		.card.active {
-			border-left: 3px solid var(--accent);
-			border-color: var(--border-acc);
-			box-shadow: none;
+			box-shadow: 0 2px 10px rgba(24, 19, 14, 0.11);
 		}
 	}
 
@@ -358,6 +352,23 @@
 		border: 1px solid rgba(138, 26, 26, 0.22);
 	}
 
+	.init-wrap {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		flex-shrink: 0;
+		gap: 1px;
+	}
+
+	.init-lbl {
+		font-size: 8px;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+		line-height: 1;
+	}
+
 	.inum {
 		font-family: var(--font-mono);
 		font-size: 20px;
@@ -365,7 +376,7 @@
 		color: var(--text-muted);
 		flex-shrink: 0;
 		min-width: 28px;
-		text-align: right;
+		text-align: center;
 		transition: color 0.2s;
 		background: none;
 		border: none;
@@ -441,6 +452,26 @@
 		font-size: 20px;
 		font-weight: 500;
 		color: var(--text);
+	}
+
+	.hp-divider {
+		width: 1px;
+		height: 20px;
+		background: var(--border);
+		flex-shrink: 0;
+		margin: 0 2px;
+	}
+
+	.ac-stat {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		flex-shrink: 0;
+		gap: 0;
+	}
+
+	.ac-num {
+		font-size: 18px;
 	}
 
 	/* HP controls */
@@ -533,42 +564,6 @@
 
 	.vbtn:active {
 		transform: scale(0.9);
-	}
-
-	/* Stats */
-	.stats-row {
-		display: flex;
-		gap: 8px;
-		padding: 0 14px 8px;
-	}
-
-	.stat-badge {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		width: 56px;
-		height: 56px;
-		border-radius: 10px;
-		border: 1px solid var(--border);
-		background: var(--bg);
-		gap: 1px;
-	}
-
-	.stat-num {
-		font-family: var(--font-mono);
-		font-size: 22px;
-		font-weight: 500;
-		color: var(--text);
-		line-height: 1;
-	}
-
-	.stat-lbl {
-		font-size: 9px;
-		font-weight: 600;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: var(--text-muted);
 	}
 
 	/* Conditions */
