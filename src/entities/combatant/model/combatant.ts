@@ -7,7 +7,7 @@ export type CombatantType = "pc" | "monster";
 export interface Combatant {
 	id: string;
 	name: string;
-	initiative: number;
+	initiative: number | null;
 	modifier: number;
 	type: CombatantType;
 	maxHp: number;
@@ -30,12 +30,15 @@ const DEFAULT_STATE: EncounterState = {
 	round: 1,
 };
 
-function rollD20(): number {
-	return Math.floor(Math.random() * 20) + 1;
-}
-
 function clampHp(value: number, max: number): number {
 	return Math.max(0, Math.min(value, max));
+}
+
+function sortByInitiative(a: Combatant, b: Combatant): number {
+	if (a.initiative === null && b.initiative === null) return 0;
+	if (a.initiative === null) return 1;
+	if (b.initiative === null) return -1;
+	return b.initiative - a.initiative;
 }
 
 function createEncounterStore() {
@@ -51,13 +54,10 @@ function createEncounterStore() {
 		addCombatant(params: {
 			name: string;
 			modifier: number;
-			initiative: number | null;
 			type: CombatantType;
 			maxHp: number;
 			ac: number | null;
 		}) {
-			const initiative =
-				params.initiative ?? rollD20() + params.modifier;
 			update((s) => ({
 				...s,
 				combatants: [
@@ -65,7 +65,7 @@ function createEncounterStore() {
 					{
 						id: nanoid(),
 						name: params.name,
-						initiative,
+						initiative: null,
 						modifier: params.modifier,
 						type: params.type,
 						maxHp: params.maxHp,
@@ -75,15 +75,58 @@ function createEncounterStore() {
 						notes: "",
 						isExpanded: false,
 					},
-				].sort((a, b) => b.initiative - a.initiative),
+				].sort(sortByInitiative),
 			}));
+		},
+
+		setInitiative(id: string, initiative: number) {
+			update((s) => ({
+				...s,
+				combatants: s.combatants
+					.map((c) => (c.id === id ? { ...c, initiative } : c))
+					.sort(sortByInitiative),
+			}));
+		},
+
+		duplicateCombatant(id: string) {
+			update((s) => {
+				const source = s.combatants.find((c) => c.id === id);
+				if (!source) return s;
+				const baseName = source.name.replace(/ \d+$/, "");
+				let maxSuffix = 1;
+				for (const c of s.combatants) {
+					if (c.name === baseName || c.name.startsWith(`${baseName} `)) {
+						const suffix = parseInt(c.name.slice(baseName.length).trim(), 10);
+						if (!isNaN(suffix) && suffix > maxSuffix) maxSuffix = suffix;
+					}
+				}
+				const copy: Combatant = {
+					...source,
+					id: nanoid(),
+					name: `${baseName} ${maxSuffix + 1}`,
+					initiative: null,
+					currentHp: source.maxHp,
+					conditions: [],
+					notes: "",
+					isExpanded: false,
+				};
+				return {
+					...s,
+					combatants: [...s.combatants, copy].sort(sortByInitiative),
+				};
+			});
 		},
 
 		removeCombatant(id: string) {
 			update((s) => {
+				const removedIndex = s.combatants.findIndex((c) => c.id === id);
 				const combatants = s.combatants.filter((c) => c.id !== id);
-				const currentTurnIndex = Math.min(
-					s.currentTurnIndex,
+				let currentTurnIndex = s.currentTurnIndex;
+				if (removedIndex < currentTurnIndex) {
+					currentTurnIndex -= 1;
+				}
+				currentTurnIndex = Math.min(
+					currentTurnIndex,
 					Math.max(0, combatants.length - 1),
 				);
 				return { ...s, combatants, currentTurnIndex };

@@ -13,6 +13,9 @@
 
 	type HpMode = "damage" | "heal";
 	let hpMode = $state<HpMode>("damage");
+	let editingInit = $state(false);
+	let initInputVal = $state("");
+	let initInputEl = $state<HTMLInputElement | null>(null);
 
 	const HP_VALUES = [1, 2, 3, 5, 10] as const;
 
@@ -30,6 +33,27 @@
 				? "var(--hp-mid)"
 				: "var(--hp-low)",
 	);
+
+	$effect(() => {
+		if (editingInit && initInputEl) {
+			initInputEl.focus();
+			initInputEl.select();
+		}
+	});
+
+	function startEditInit(e: Event) {
+		e.stopPropagation();
+		initInputVal = combatant.initiative?.toString() ?? "";
+		editingInit = true;
+	}
+
+	function commitInit() {
+		const val = parseInt(initInputVal, 10);
+		if (!isNaN(val)) {
+			encounterStore.setInitiative(combatant.id, val);
+		}
+		editingInit = false;
+	}
 
 	function handleHpButton(value: number) {
 		if (hpMode === "damage") {
@@ -68,7 +92,21 @@
 		<span class="tbadge" class:player={combatant.type === "pc"} class:monster={combatant.type === "monster"}>
 			{combatant.type === "pc" ? "PC" : "Monster"}
 		</span>
-		<span class="inum">{combatant.initiative}</span>
+		{#if editingInit}
+			<input
+				bind:this={initInputEl}
+				class="init-input"
+				type="number"
+				bind:value={initInputVal}
+				onblur={commitInit}
+				onkeydown={(e) => { if (e.key === "Enter") commitInit(); if (e.key === "Escape") editingInit = false; }}
+				onclick={(e) => e.stopPropagation()}
+			/>
+		{:else}
+			<button class="inum" onclick={startEditInit} aria-label="Edit initiative">
+				{combatant.initiative ?? "—"}
+			</button>
+		{/if}
 	</div>
 
 	<!-- HP bar (always visible) -->
@@ -152,6 +190,18 @@
 				rows={1}
 			></textarea>
 		</div>
+
+		<!-- Card actions -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="card-actions" onclick={(e) => e.stopPropagation()}>
+			<button class="action-btn" onclick={() => encounterStore.duplicateCombatant(combatant.id)}>
+				Duplicate
+			</button>
+			<button class="action-btn danger" onclick={() => encounterStore.removeCombatant(combatant.id)}>
+				Remove
+			</button>
+		</div>
 	{/if}
 </div>
 
@@ -162,7 +212,7 @@
 		border: 1px solid var(--border);
 		margin-bottom: 9px;
 		overflow: hidden;
-		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+		box-shadow: 0 1px 2px rgba(24, 19, 14, 0.04), 0 3px 10px rgba(24, 19, 14, 0.06);
 		transition: border-color 0.15s, box-shadow 0.15s;
 		cursor: pointer;
 		user-select: none;
@@ -172,7 +222,7 @@
 	.card.active {
 		border-left: 3px solid var(--accent);
 		border-color: var(--border-acc);
-		box-shadow: 0 3px 12px rgba(24, 19, 14, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
+		box-shadow: 0 2px 6px rgba(24, 19, 14, 0.10), 0 8px 24px rgba(24, 19, 14, 0.09);
 	}
 
 	.card.dead {
@@ -254,10 +304,33 @@
 		min-width: 26px;
 		text-align: right;
 		transition: color 0.2s;
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+	}
+
+	.inum:hover {
+		color: var(--text);
 	}
 
 	.card.active .inum {
 		color: var(--text);
+	}
+
+	.init-input {
+		font-family: var(--font-mono);
+		font-size: 19px;
+		font-weight: 500;
+		color: var(--text);
+		background: var(--bg);
+		border: 1px solid var(--border-hi);
+		border-radius: 6px;
+		padding: 2px 5px;
+		width: 56px;
+		text-align: right;
+		outline: none;
+		flex-shrink: 0;
 	}
 
 	/* HP row */
@@ -444,12 +517,13 @@
 	}
 
 	.ctag {
-		display: flex;
+		display: inline-flex;
 		align-items: center;
 		gap: 3px;
 		font-size: 12px;
 		font-weight: 500;
-		padding: 4px 8px 4px 10px;
+		height: 30px;
+		padding: 0 6px 0 10px;
 		border-radius: 100px;
 		background: rgba(24, 19, 14, 0.06);
 		border: 1px solid rgba(24, 19, 14, 0.18);
@@ -460,14 +534,13 @@
 		background: none;
 		border: none;
 		cursor: pointer;
-		color: rgba(24, 19, 14, 0.3);
+		color: rgba(24, 19, 14, 0.35);
 		font-size: 15px;
 		line-height: 1;
-		padding: 0 2px;
+		padding: 2px 3px;
 		display: flex;
 		align-items: center;
 		transition: color 0.1s;
-		min-height: var(--touch-min);
 	}
 
 	.ctag-rm:hover {
@@ -480,16 +553,49 @@
 		color: var(--text-muted);
 		background: transparent;
 		border: 1px dashed var(--border-hi);
-		padding: 4px 11px;
+		height: 30px;
+		padding: 0 12px;
 		border-radius: 100px;
 		transition: all 0.15s;
-		min-height: var(--touch-min);
 	}
 
 	.add-cond-btn:hover {
 		color: var(--text);
 		border-color: var(--border-hi);
 		border-style: solid;
+	}
+
+	/* Card actions */
+	.card-actions {
+		display: flex;
+		gap: 8px;
+		padding: 0 14px 14px;
+		border-top: 1px solid var(--border);
+		margin-top: 2px;
+		padding-top: 10px;
+	}
+
+	.action-btn {
+		font-size: 12px;
+		font-weight: 500;
+		color: var(--text-muted);
+		background: transparent;
+		border: 1px solid var(--border);
+		height: 30px;
+		padding: 0 12px;
+		border-radius: 8px;
+		transition: all 0.15s;
+	}
+
+	.action-btn:hover {
+		color: var(--text);
+		border-color: var(--border-hi);
+	}
+
+	.action-btn.danger:hover {
+		color: var(--hp-low);
+		border-color: rgba(160, 42, 24, 0.4);
+		background: rgba(160, 42, 24, 0.05);
 	}
 
 	/* Notes */

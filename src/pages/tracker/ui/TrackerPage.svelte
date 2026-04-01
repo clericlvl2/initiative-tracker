@@ -93,6 +93,17 @@
 		position: relative;
 	}
 
+	@media (min-width: 640px) {
+		.layout {
+			margin: 28px auto;
+			height: calc(100dvh - 56px);
+			border-radius: 20px;
+			border: 1px solid var(--border);
+			box-shadow: 0 4px 20px rgba(24, 19, 14, 0.10), 0 12px 48px rgba(24, 19, 14, 0.08);
+			overflow: hidden;
+		}
+	}
+
 	/* Top bar */
 	.top-bar {
 		display: flex;
@@ -231,7 +242,7 @@
 		font-weight: 600;
 		color: #ffffff;
 		background: var(--text);
-		border: none;
+		border: 1px solid transparent;
 		height: 54px;
 		border-radius: 13px;
 		flex: 1;

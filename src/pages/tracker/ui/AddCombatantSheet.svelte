@@ -10,21 +10,15 @@
 
 	let name = $state("");
 	let modifier = $state(0);
-	let manualInitiative = $state<number | null>(null);
 	let maxHp = $state(10);
 	let ac = $state<number | null>(null);
 	let combatantType = $state<CombatantType>("monster");
-
-	function rollInitiative() {
-		manualInitiative = null; // null = auto-roll on submit
-	}
 
 	function handleSubmit() {
 		if (!name.trim()) return;
 		encounterStore.addCombatant({
 			name: name.trim(),
 			modifier,
-			initiative: manualInitiative,
 			type: combatantType,
 			maxHp,
 			ac,
@@ -76,24 +70,14 @@
 
 		<!-- Initiative -->
 		<div class="form-field">
-			<span class="flabel">Initiative</span>
-			<div class="init-row">
-				<input
-					class="finput init-narrow"
-					type="number"
-					placeholder="Mod"
-					bind:value={modifier}
-				/>
-				<button class="roll-btn" onclick={rollInitiative}>
-					{manualInitiative === null ? "🎲 Auto-roll d20" : `Rolled: ${manualInitiative} — re-roll`}
-				</button>
-				<input
-					class="finput init-narrow"
-					type="number"
-					placeholder="Fix"
-					bind:value={manualInitiative}
-				/>
-			</div>
+			<label class="flabel" for="modifier">Initiative Bonus</label>
+			<input
+				id="modifier"
+				class="finput"
+				type="number"
+				placeholder="+0"
+				bind:value={modifier}
+			/>
 		</div>
 
 		<!-- HP + AC -->
@@ -243,44 +227,6 @@
 		color: var(--monster);
 		border-color: rgba(138, 26, 26, 0.4);
 		background: rgba(138, 26, 26, 0.07);
-	}
-
-	.init-row {
-		display: flex;
-		gap: 8px;
-		align-items: center;
-	}
-
-	.init-row .finput {
-		text-align: center;
-	}
-
-	.init-narrow {
-		width: 70px;
-		flex-shrink: 0;
-		padding: 11px 6px;
-	}
-
-	.roll-btn {
-		flex: 1;
-		height: 44px;
-		background: var(--card);
-		border: 1px dashed var(--border-hi);
-		border-radius: 11px;
-		font-size: 12px;
-		font-weight: 500;
-		color: var(--text-mid);
-		transition: all 0.15s;
-	}
-
-	.roll-btn:hover {
-		border-color: var(--accent);
-		color: var(--accent);
-		border-style: solid;
-	}
-
-	.roll-btn:active {
-		transform: scale(0.97);
 	}
 
 	.sheet-actions {
