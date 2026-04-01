@@ -79,6 +79,19 @@ function createEncounterStore() {
 			}));
 		},
 
+		rollAllUnrolledInitiatives() {
+			update((s) => ({
+				...s,
+				combatants: s.combatants
+					.map((c) =>
+						c.initiative === null
+							? { ...c, initiative: Math.floor(Math.random() * 20) + 1 + c.modifier }
+							: c,
+					)
+					.sort(sortByInitiative),
+			}));
+		},
+
 		setInitiative(id: string, initiative: number) {
 			update((s) => ({
 				...s,

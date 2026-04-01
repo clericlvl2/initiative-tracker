@@ -9,7 +9,7 @@
 	let { onClose }: Props = $props();
 
 	let name = $state("");
-	let modifier = $state(0);
+	let modifier = $state<number | null>(null);
 	let maxHp = $state(10);
 	let ac = $state<number | null>(null);
 	let combatantType = $state<CombatantType>("monster");
@@ -18,7 +18,7 @@
 		if (!name.trim()) return;
 		encounterStore.addCombatant({
 			name: name.trim(),
-			modifier,
+			modifier: modifier ?? 0,
 			type: combatantType,
 			maxHp,
 			ac,
@@ -241,7 +241,7 @@
 		background: var(--bg);
 		border: 1px solid var(--border);
 		height: 50px;
-		padding: 0 20px;
+		flex: 1;
 		border-radius: 12px;
 		transition: color 0.15s;
 	}

@@ -16,6 +16,7 @@
 	let editingInit = $state(false);
 	let initInputVal = $state("");
 	let initInputEl = $state<HTMLInputElement | null>(null);
+	let notesVisible = $state(combatant.notes.length > 0);
 
 	const HP_VALUES = [1, 2, 3, 5, 10] as const;
 
@@ -32,6 +33,9 @@
 			: hpPercent > 25
 				? "var(--hp-mid)"
 				: "var(--hp-low)",
+	);
+	let notesBtnLabel = $derived(
+		notesVisible ? "Hide note" : combatant.notes ? "Edit note" : "Add note",
 	);
 
 	$effect(() => {
@@ -73,6 +77,12 @@
 		textarea.style.height = `${textarea.scrollHeight}px`;
 		encounterStore.setNote(combatant.id, textarea.value);
 	}
+
+	function handleRemove() {
+		if (confirm(`Remove ${combatant.name}?`)) {
+			encounterStore.removeCombatant(combatant.id);
+		}
+	}
 </script>
 
 <div
@@ -84,12 +94,18 @@
 	onclick={onTap}
 	onkeydown={(e) => e.key === "Enter" && onTap()}
 	aria-expanded={isExpanded}
+	aria-label="{combatant.name}, initiative {combatant.initiative ?? 'unrolled'}, HP {combatant.currentHp}/{combatant.maxHp}"
 >
 	<!-- Card header (always visible) -->
 	<div class="card-hdr">
-		<span class="dot"></span>
+		<span class="dot" aria-hidden="true"></span>
 		<span class="cname">{combatant.name}</span>
-		<span class="tbadge" class:player={combatant.type === "pc"} class:monster={combatant.type === "monster"}>
+		<span
+			class="tbadge"
+			class:player={combatant.type === "pc"}
+			class:monster={combatant.type === "monster"}
+			aria-label={combatant.type === "pc" ? "Player character" : "Monster"}
+		>
 			{combatant.type === "pc" ? "PC" : "Monster"}
 		</span>
 		{#if editingInit}
@@ -99,23 +115,31 @@
 				type="number"
 				bind:value={initInputVal}
 				onblur={commitInit}
-				onkeydown={(e) => { if (e.key === "Enter") commitInit(); if (e.key === "Escape") editingInit = false; }}
+				onkeydown={(e) => {
+					if (e.key === "Enter") commitInit();
+					if (e.key === "Escape") editingInit = false;
+				}}
 				onclick={(e) => e.stopPropagation()}
+				aria-label="Initiative value"
 			/>
 		{:else}
-			<button class="inum" onclick={startEditInit} aria-label="Edit initiative">
+			<button
+				class="inum"
+				onclick={startEditInit}
+				aria-label="Edit initiative, currently {combatant.initiative ?? 'unrolled'}"
+			>
 				{combatant.initiative ?? "—"}
 			</button>
 		{/if}
 	</div>
 
 	<!-- HP bar (always visible) -->
-	<div class="hp-row">
-		<span class="hp-lbl">HP</span>
-		<div class="hp-track">
+	<div class="hp-row" aria-label="HP {combatant.currentHp} of {combatant.maxHp}">
+		<span class="hp-lbl" aria-hidden="true">HP</span>
+		<div class="hp-track" role="progressbar" aria-valuenow={hpPercent} aria-valuemin={0} aria-valuemax={100}>
 			<div class="hp-fill" style="width: {hpPercent}%; background: {hpColor};"></div>
 		</div>
-		<span class="hp-nums">
+		<span class="hp-nums" aria-hidden="true">
 			<span class="cur">{combatant.currentHp}</span>/{combatant.maxHp}
 		</span>
 	</div>
@@ -130,18 +154,19 @@
 				class:damage={hpMode === "damage"}
 				class:heal={hpMode === "heal"}
 				onclick={() => (hpMode = hpMode === "damage" ? "heal" : "damage")}
-				aria-label="Toggle damage/heal mode"
+				aria-label="Toggle damage/heal mode, currently {hpMode}"
 			>
-				<span class="mode-btn-sign">{hpMode === "damage" ? "−" : "+"}</span>
-				<span class="mode-btn-label">{hpMode === "damage" ? "DMG" : "HEAL"}</span>
+				<span class="mode-btn-sign" aria-hidden="true">{hpMode === "damage" ? "−" : "+"}</span>
+				<span class="mode-btn-label" aria-hidden="true">{hpMode === "damage" ? "DMG" : "HEAL"}</span>
 			</button>
-			<div class="val-btns">
+			<div class="val-btns" role="group" aria-label="{hpMode === 'damage' ? 'Damage' : 'Heal'} amount">
 				{#each HP_VALUES as value (value)}
 					<button
 						class="vbtn"
 						class:mode-damage={hpMode === "damage"}
 						class:mode-heal={hpMode === "heal"}
 						onclick={() => handleHpButton(value)}
+						aria-label="{hpMode === 'damage' ? 'Deal' : 'Heal'} {value} HP"
 					>
 						{hpMode === "damage" ? `−${value}` : `+${value}`}
 					</button>
@@ -149,19 +174,19 @@
 			</div>
 		</div>
 
-		<!-- AC badge + Stats row -->
+		<!-- AC badge -->
 		{#if combatant.ac !== null}
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="stats-row" onclick={(e) => e.stopPropagation()}>
-				<div class="stat-badge">
-					<span class="stat-num">{combatant.ac}</span>
-					<span class="stat-lbl">AC</span>
+				<div class="stat-badge" aria-label="Armor Class {combatant.ac}">
+					<span class="stat-num" aria-hidden="true">{combatant.ac}</span>
+					<span class="stat-lbl" aria-hidden="true">AC</span>
 				</div>
 			</div>
 		{/if}
 
-		<!-- Conditions -->
+		<!-- Conditions + Notes toggle -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="cond-row" onclick={(e) => e.stopPropagation()}>
@@ -175,30 +200,52 @@
 					>×</button>
 				</span>
 			{/each}
-			<button class="add-cond-btn" onclick={onAddCondition}>+ Condition</button>
+			<button class="add-cond-btn" onclick={onAddCondition} aria-label="Add condition">
+				+ Condition
+			</button>
+			<button
+				class="add-cond-btn"
+				class:has-content={combatant.notes.length > 0}
+				onclick={(e) => { e.stopPropagation(); notesVisible = !notesVisible; }}
+				aria-expanded={notesVisible}
+				aria-label="{notesBtnLabel}"
+			>
+				{notesBtnLabel}
+			</button>
 		</div>
 
-		<!-- Notes -->
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="note-row" onclick={(e) => e.stopPropagation()}>
-			<textarea
-				class="note-field"
-				placeholder="Notes…"
-				value={combatant.notes}
-				oninput={handleNoteInput}
-				rows={1}
-			></textarea>
-		</div>
+		<!-- Notes (toggled) -->
+		{#if notesVisible}
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="note-row" onclick={(e) => e.stopPropagation()}>
+				<textarea
+					class="note-field"
+					placeholder="Notes…"
+					value={combatant.notes}
+					oninput={handleNoteInput}
+					rows={2}
+					aria-label="Notes for {combatant.name}"
+				></textarea>
+			</div>
+		{/if}
 
 		<!-- Card actions -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="card-actions" onclick={(e) => e.stopPropagation()}>
-			<button class="action-btn" onclick={() => encounterStore.duplicateCombatant(combatant.id)}>
+			<button
+				class="action-btn"
+				onclick={() => encounterStore.duplicateCombatant(combatant.id)}
+				aria-label="Duplicate {combatant.name}"
+			>
 				Duplicate
 			</button>
-			<button class="action-btn danger" onclick={() => encounterStore.removeCombatant(combatant.id)}>
+			<button
+				class="action-btn danger"
+				onclick={handleRemove}
+				aria-label="Remove {combatant.name}"
+			>
 				Remove
 			</button>
 		</div>
@@ -208,25 +255,41 @@
 <style>
 	.card {
 		background: var(--card);
-		border-radius: 14px;
-		border: 1px solid var(--border);
-		margin-bottom: 9px;
+		border-radius: 12px;
+		margin-bottom: 7px;
 		overflow: hidden;
-		box-shadow: 0 1px 2px rgba(24, 19, 14, 0.04), 0 3px 10px rgba(24, 19, 14, 0.06);
-		transition: border-color 0.15s, box-shadow 0.15s;
+		box-shadow: 0 1px 4px rgba(24, 19, 14, 0.07);
+		transition: box-shadow 0.15s;
 		cursor: pointer;
 		user-select: none;
 		outline: none;
 	}
 
+	.card:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+
 	.card.active {
 		border-left: 3px solid var(--accent);
-		border-color: var(--border-acc);
-		box-shadow: 0 2px 6px rgba(24, 19, 14, 0.10), 0 8px 24px rgba(24, 19, 14, 0.09);
+		box-shadow: 0 2px 10px rgba(24, 19, 14, 0.11);
 	}
 
 	.card.dead {
 		opacity: 0.38;
+	}
+
+	@media (min-width: 640px) {
+		.card {
+			box-shadow: none;
+			border-radius: 10px;
+			border: 1px solid var(--border);
+		}
+		.card.active {
+			border-left: 3px solid var(--accent);
+			border-color: var(--border-acc);
+			box-shadow: none;
+		}
 	}
 
 	/* Card header */
@@ -234,7 +297,7 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		padding: 13px 14px 10px;
+		padding: 12px 14px 9px;
 	}
 
 	.dot {
@@ -297,11 +360,11 @@
 
 	.inum {
 		font-family: var(--font-mono);
-		font-size: 19px;
+		font-size: 20px;
 		font-weight: 500;
 		color: var(--text-muted);
 		flex-shrink: 0;
-		min-width: 26px;
+		min-width: 28px;
 		text-align: right;
 		transition: color 0.2s;
 		background: none;
@@ -320,7 +383,7 @@
 
 	.init-input {
 		font-family: var(--font-mono);
-		font-size: 19px;
+		font-size: 20px;
 		font-weight: 500;
 		color: var(--text);
 		background: var(--bg);
@@ -353,15 +416,15 @@
 
 	.hp-track {
 		flex: 1;
-		height: 5px;
+		height: 8px;
 		background: var(--hp-bar-bg);
-		border-radius: 3px;
+		border-radius: 4px;
 		overflow: hidden;
 	}
 
 	.hp-fill {
 		height: 100%;
-		border-radius: 3px;
+		border-radius: 4px;
 		transition: width 0.3s ease, background 0.3s ease;
 	}
 
@@ -370,12 +433,13 @@
 		font-size: 12px;
 		color: var(--text-muted);
 		flex-shrink: 0;
-		min-width: 56px;
+		min-width: 58px;
 		text-align: right;
 	}
 
 	.hp-nums .cur {
-		font-size: 16px;
+		font-size: 20px;
+		font-weight: 500;
 		color: var(--text);
 	}
 
@@ -384,7 +448,7 @@
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		padding: 0 14px 12px;
+		padding: 0 14px 10px;
 	}
 
 	.mode-btn {
@@ -475,7 +539,7 @@
 	.stats-row {
 		display: flex;
 		gap: 8px;
-		padding: 0 14px 12px;
+		padding: 0 14px 8px;
 	}
 
 	.stat-badge {
@@ -483,24 +547,24 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		width: 64px;
-		height: 64px;
-		border-radius: 12px;
+		width: 56px;
+		height: 56px;
+		border-radius: 10px;
 		border: 1px solid var(--border);
 		background: var(--bg);
-		gap: 2px;
+		gap: 1px;
 	}
 
 	.stat-num {
 		font-family: var(--font-mono);
-		font-size: 26px;
+		font-size: 22px;
 		font-weight: 500;
 		color: var(--text);
 		line-height: 1;
 	}
 
 	.stat-lbl {
-		font-size: 10px;
+		font-size: 9px;
 		font-weight: 600;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
@@ -512,7 +576,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 5px;
-		padding: 0 14px 10px;
+		padding: 0 14px 8px;
 		align-items: center;
 	}
 
@@ -559,48 +623,20 @@
 		transition: all 0.15s;
 	}
 
+	.add-cond-btn.has-content {
+		border-style: solid;
+		color: var(--text-mid);
+	}
+
 	.add-cond-btn:hover {
 		color: var(--text);
 		border-color: var(--border-hi);
 		border-style: solid;
 	}
 
-	/* Card actions */
-	.card-actions {
-		display: flex;
-		gap: 8px;
-		padding: 0 14px 14px;
-		border-top: 1px solid var(--border);
-		margin-top: 2px;
-		padding-top: 10px;
-	}
-
-	.action-btn {
-		font-size: 12px;
-		font-weight: 500;
-		color: var(--text-muted);
-		background: transparent;
-		border: 1px solid var(--border);
-		height: 30px;
-		padding: 0 12px;
-		border-radius: 8px;
-		transition: all 0.15s;
-	}
-
-	.action-btn:hover {
-		color: var(--text);
-		border-color: var(--border-hi);
-	}
-
-	.action-btn.danger:hover {
-		color: var(--hp-low);
-		border-color: rgba(160, 42, 24, 0.4);
-		background: rgba(160, 42, 24, 0.05);
-	}
-
 	/* Notes */
 	.note-row {
-		padding: 0 14px 12px;
+		padding: 0 14px 8px;
 	}
 
 	.note-field {
@@ -625,5 +661,36 @@
 
 	.note-field:focus {
 		border-color: var(--border-hi);
+	}
+
+	/* Card actions */
+	.card-actions {
+		display: flex;
+		gap: 8px;
+		padding: 8px 14px 12px;
+		border-top: 1px solid var(--border);
+	}
+
+	.action-btn {
+		font-size: 12px;
+		font-weight: 500;
+		color: var(--text-muted);
+		background: transparent;
+		border: 1px solid var(--border);
+		height: 30px;
+		padding: 0 12px;
+		border-radius: 8px;
+		transition: all 0.15s;
+	}
+
+	.action-btn:hover {
+		color: var(--text);
+		border-color: var(--border-hi);
+	}
+
+	.action-btn.danger:hover {
+		color: var(--hp-low);
+		border-color: rgba(160, 42, 24, 0.4);
+		background: rgba(160, 42, 24, 0.05);
 	}
 </style>
