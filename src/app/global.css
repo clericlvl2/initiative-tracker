@@ -1,0 +1,76 @@
+ /* Fonts — self-hosted via @fontsource for offline PWA support */
+@import "@fontsource/fraunces/400.css";
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+
+/* Design tokens */
+:root {
+	--bg: #edeae4;
+	--surface: #f5f3f0;
+	--card: #ffffff;
+	--border: #e4e0d8;
+	--border-hi: #c8c3ba;
+	--border-acc: #18130e;
+	--accent: #18130e;
+	--accent-soft: rgba(24, 19, 14, 0.05);
+	--text: #18130e;
+	--text-mid: #4a4540;
+	--text-muted: #9a9590;
+
+	--player: #284a80;
+	--monster: #7a2020;
+
+	--hp-full: #2a5e38;
+	--hp-mid: #886020;
+	--hp-low: #a02a18;
+	--hp-bar-bg: #e8e4dc;
+
+	--font-serif: "Fraunces", Georgia, serif;
+	--font-mono: "IBM Plex Mono", "Courier New", monospace;
+	--font-sans: "IBM Plex Sans", system-ui, sans-serif;
+
+	--touch-min: 44px;
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	-webkit-tap-highlight-color: transparent;
+}
+
+html {
+	font-size: 16px;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	background-color: var(--bg);
+	color: var(--text);
+	font-family: var(--font-sans);
+	line-height: 1.5;
+	min-height: 100dvh;
+}
+
+button {
+	cursor: pointer;
+	font-family: inherit;
+	border: none;
+	background: none;
+}
+
+input,
+textarea {
+	font-family: inherit;
+}
+
+textarea {
+	resize: none;
+}
