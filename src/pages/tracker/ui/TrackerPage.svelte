@@ -87,20 +87,19 @@
 			</button>
 		{/if}
 	</footer>
+
+	<!-- Sheets rendered inside .layout so they're clipped to the app card on desktop -->
+	{#if showAddSheet}
+		<AddCombatantSheet onClose={() => (showAddSheet = false)} />
+	{/if}
+
+	{#if conditionTargetId !== null}
+		<ConditionPickerSheet
+			combatantId={conditionTargetId}
+			onClose={() => (conditionTargetId = null)}
+		/>
+	{/if}
 </div>
-
-<!-- Add combatant sheet -->
-{#if showAddSheet}
-	<AddCombatantSheet onClose={() => (showAddSheet = false)} />
-{/if}
-
-<!-- Condition picker sheet -->
-{#if conditionTargetId !== null}
-	<ConditionPickerSheet
-		combatantId={conditionTargetId}
-		onClose={() => (conditionTargetId = null)}
-	/>
-{/if}
 
 <style>
 	.layout {

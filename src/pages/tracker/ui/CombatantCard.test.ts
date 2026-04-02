@@ -39,7 +39,7 @@ describe("CombatantCard", () => {
 
 	it("C-2: shows current and max HP", () => {
 		const { container } = renderCard();
-		expect(container.querySelector(".cur")).toHaveTextContent("7");
+		expect(container.querySelector(".hp-cur")).toHaveTextContent("7");
 		expect(container.querySelector(".hp-nums")).toHaveTextContent("7/10");
 	});
 

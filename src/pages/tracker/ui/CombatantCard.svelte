@@ -96,62 +96,71 @@
 	aria-expanded={isExpanded}
 	aria-label="{combatant.name}, initiative {combatant.initiative ?? 'unrolled'}, HP {combatant.currentHp}/{combatant.maxHp}"
 >
-	<!-- Card header (always visible) -->
-	<div class="card-hdr">
-		<span class="dot" aria-hidden="true"></span>
-		<span class="cname">{combatant.name}</span>
-		<span
-			class="tbadge"
-			class:player={combatant.type === "pc"}
-			class:monster={combatant.type === "monster"}
-			aria-label={combatant.type === "pc" ? "Player character" : "Monster"}
-		>
-			{combatant.type === "pc" ? "PC" : "Monster"}
-		</span>
-		<div class="init-wrap">
-			<span class="init-lbl" aria-hidden="true">Initiative</span>
-			{#if editingInit}
-				<input
-					bind:this={initInputEl}
-					class="init-input"
-					type="number"
-					bind:value={initInputVal}
-					onblur={commitInit}
-					onkeydown={(e) => {
-						if (e.key === "Enter") commitInit();
-						if (e.key === "Escape") editingInit = false;
-					}}
-					onclick={(e) => e.stopPropagation()}
-					aria-label="Initiative value"
-				/>
-			{:else}
-				<button
-					class="inum"
-					onclick={startEditInit}
-					aria-label="Edit initiative, currently {combatant.initiative ?? 'unrolled'}"
-				>
-					{combatant.initiative ?? "—"}
-				</button>
+	<div class="card-main">
+		<!-- Name + type -->
+		<div class="card-hdr">
+			<span class="dot" aria-hidden="true"></span>
+			<span class="cname">{combatant.name}</span>
+			<span
+				class="tbadge"
+				class:player={combatant.type === "pc"}
+				class:monster={combatant.type === "monster"}
+				aria-label={combatant.type === "pc" ? "Player character" : "Monster"}
+			>
+				{combatant.type === "pc" ? "PC" : "Monster"}
+			</span>
+		</div>
+
+		<!-- INIT | HP | AC in one row -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="card-stats" onclick={(e) => e.stopPropagation()}>
+			<div class="s-init">
+				{#if editingInit}
+					<input
+						bind:this={initInputEl}
+						class="init-input"
+						type="number"
+						bind:value={initInputVal}
+						onblur={commitInit}
+						onkeydown={(e) => {
+							if (e.key === "Enter") commitInit();
+							if (e.key === "Escape") editingInit = false;
+						}}
+						aria-label="Initiative value"
+					/>
+				{:else}
+					<button
+						class="s-num-btn"
+						onclick={startEditInit}
+						aria-label="Edit initiative, currently {combatant.initiative ?? 'unrolled'}"
+					>
+						{combatant.initiative ?? "—"}
+					</button>
+				{/if}
+				<span class="s-lbl" aria-hidden="true">INIT</span>
+			</div>
+
+			<span class="s-divider" aria-hidden="true"></span>
+
+			<div class="s-hp" aria-label="HP {combatant.currentHp} of {combatant.maxHp}">
+				<span class="s-lbl" aria-hidden="true">HP</span>
+				<div class="hp-track" role="progressbar" aria-valuenow={hpPercent} aria-valuemin={0} aria-valuemax={100}>
+					<div class="hp-fill" style="width: {hpPercent}%; background: {hpColor};"></div>
+				</div>
+				<span class="hp-nums" aria-hidden="true">
+					<span class="hp-cur">{combatant.currentHp}</span>/{combatant.maxHp}
+				</span>
+			</div>
+
+			{#if combatant.ac !== null}
+				<span class="s-divider" aria-hidden="true"></span>
+				<div class="s-ac" aria-label="Armor Class {combatant.ac}">
+					<span class="s-val" aria-hidden="true">{combatant.ac}</span>
+					<span class="s-lbl" aria-hidden="true">AC</span>
+				</div>
 			{/if}
 		</div>
-	</div>
-
-	<!-- HP bar + AC (always visible) -->
-	<div class="hp-row" aria-label="HP {combatant.currentHp} of {combatant.maxHp}{combatant.ac !== null ? `, AC ${combatant.ac}` : ''}">
-		<span class="hp-lbl" aria-hidden="true">HP</span>
-		<div class="hp-track" role="progressbar" aria-valuenow={hpPercent} aria-valuemin={0} aria-valuemax={100}>
-			<div class="hp-fill" style="width: {hpPercent}%; background: {hpColor};"></div>
-		</div>
-		<span class="hp-nums" aria-hidden="true">
-			<span class="cur">{combatant.currentHp}</span>/{combatant.maxHp}
-		</span>
-		{#if combatant.ac !== null}
-			<span class="hp-divider" aria-hidden="true"></span>
-			<span class="ac-stat" aria-hidden="true">
-				<span class="cur ac-num">{combatant.ac}</span>
-				<span class="hp-lbl">AC</span>
-			</span>
-		{/if}
 	</div>
 
 	{#if isExpanded}
@@ -223,6 +232,7 @@
 					value={combatant.notes}
 					oninput={handleNoteInput}
 					rows={2}
+					maxlength={250}
 					aria-label="Notes for {combatant.name}"
 				></textarea>
 			</div>
@@ -268,9 +278,9 @@
 		outline-offset: 2px;
 	}
 
+	/* Active: inset ring — no layout shift */
 	.card.active {
-		border-left: 3px solid var(--accent);
-		box-shadow: 0 2px 10px rgba(24, 19, 14, 0.11);
+		box-shadow: inset 0 0 0 2px var(--accent), 0 2px 10px rgba(24, 19, 14, 0.11);
 	}
 
 	.card.dead {
@@ -282,16 +292,37 @@
 			box-shadow: 0 2px 8px rgba(24, 19, 14, 0.08);
 		}
 		.card.active {
-			box-shadow: 0 2px 10px rgba(24, 19, 14, 0.11);
+			box-shadow: inset 0 0 0 2px var(--accent), 0 2px 10px rgba(24, 19, 14, 0.11);
 		}
 	}
 
-	/* Card header */
+	/* card-main: stacked on mobile, side-by-side on desktop */
+	.card-main {
+		display: flex;
+		flex-direction: column;
+	}
+
+	@media (min-width: 640px) {
+		.card-main {
+			flex-direction: row;
+			align-items: stretch;
+		}
+	}
+
+	/* Header */
 	.card-hdr {
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		padding: 12px 14px 9px;
+		padding: 12px 14px 8px;
+	}
+
+	@media (min-width: 640px) {
+		.card-hdr {
+			flex: 1;
+			min-width: 0;
+			padding: 11px 14px;
+		}
 	}
 
 	.dot {
@@ -352,15 +383,72 @@
 		border: 1px solid rgba(138, 26, 26, 0.22);
 	}
 
-	.init-wrap {
+	/* Stats row */
+	.card-stats {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 0 14px 10px;
+	}
+
+	@media (min-width: 640px) {
+		.card-stats {
+			flex: 0 0 260px;
+			padding: 0 14px 0 12px;
+			border-left: 1px solid var(--border);
+			align-self: stretch;
+			align-items: center;
+		}
+	}
+
+	/* INIT */
+	.s-init {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		flex-shrink: 0;
-		gap: 1px;
+		gap: 2px;
+		min-width: 32px;
 	}
 
-	.init-lbl {
+	.s-num-btn {
+		font-family: var(--font-mono);
+		font-size: 20px;
+		font-weight: 500;
+		color: var(--text-muted);
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		line-height: 1;
+		transition: color 0.15s;
+		text-align: center;
+		min-width: 28px;
+	}
+
+	.s-num-btn:hover {
+		color: var(--text);
+	}
+
+	.card.active .s-num-btn {
+		color: var(--text);
+	}
+
+	.init-input {
+		font-family: var(--font-mono);
+		font-size: 18px;
+		font-weight: 500;
+		color: var(--text);
+		background: var(--bg);
+		border: 1px solid var(--border-hi);
+		border-radius: 6px;
+		padding: 2px 4px;
+		width: 50px;
+		text-align: center;
+		outline: none;
+	}
+
+	.s-lbl {
 		font-size: 8px;
 		font-weight: 600;
 		letter-spacing: 0.1em;
@@ -369,60 +457,20 @@
 		line-height: 1;
 	}
 
-	.inum {
-		font-family: var(--font-mono);
-		font-size: 20px;
-		font-weight: 500;
-		color: var(--text-muted);
-		flex-shrink: 0;
-		min-width: 28px;
-		text-align: center;
-		transition: color 0.2s;
-		background: none;
-		border: none;
-		padding: 0;
-		cursor: pointer;
-	}
-
-	.inum:hover {
-		color: var(--text);
-	}
-
-	.card.active .inum {
-		color: var(--text);
-	}
-
-	.init-input {
-		font-family: var(--font-mono);
-		font-size: 20px;
-		font-weight: 500;
-		color: var(--text);
-		background: var(--bg);
-		border: 1px solid var(--border-hi);
-		border-radius: 6px;
-		padding: 2px 5px;
-		width: 56px;
-		text-align: right;
-		outline: none;
+	.s-divider {
+		width: 1px;
+		height: 22px;
+		background: var(--border);
 		flex-shrink: 0;
 	}
 
-	/* HP row */
-	.hp-row {
+	/* HP */
+	.s-hp {
+		flex: 1;
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		padding: 0 14px 10px;
-	}
-
-	.hp-lbl {
-		font-size: 10px;
-		font-weight: 600;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: var(--text-muted);
-		flex-shrink: 0;
-		width: 18px;
+		gap: 6px;
+		min-width: 0;
 	}
 
 	.hp-track {
@@ -431,6 +479,7 @@
 		background: var(--hp-bar-bg);
 		border-radius: 4px;
 		overflow: hidden;
+		min-width: 24px;
 	}
 
 	.hp-fill {
@@ -444,34 +493,31 @@
 		font-size: 12px;
 		color: var(--text-muted);
 		flex-shrink: 0;
-		min-width: 58px;
-		text-align: right;
+		white-space: nowrap;
 	}
 
-	.hp-nums .cur {
-		font-size: 20px;
+	.hp-cur {
+		font-size: 18px;
 		font-weight: 500;
 		color: var(--text);
 	}
 
-	.hp-divider {
-		width: 1px;
-		height: 20px;
-		background: var(--border);
-		flex-shrink: 0;
-		margin: 0 2px;
-	}
-
-	.ac-stat {
+	/* AC */
+	.s-ac {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		flex-shrink: 0;
-		gap: 0;
+		gap: 2px;
+		min-width: 28px;
 	}
 
-	.ac-num {
-		font-size: 18px;
+	.s-val {
+		font-family: var(--font-mono);
+		font-size: 20px;
+		font-weight: 500;
+		color: var(--text);
+		line-height: 1;
 	}
 
 	/* HP controls */
@@ -645,6 +691,7 @@
 		padding: 8px 11px;
 		outline: none;
 		overflow: hidden;
+		resize: none;
 		min-height: 38px;
 		transition: border-color 0.15s;
 		line-height: 1.5;

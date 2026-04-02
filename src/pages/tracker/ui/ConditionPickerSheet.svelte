@@ -49,15 +49,13 @@
 
 <style>
 	.overlay {
-		position: fixed;
+		position: absolute;
 		inset: 0;
 		background: rgba(18, 14, 10, 0.55);
 		display: flex;
 		align-items: flex-end;
 		z-index: 100;
 		backdrop-filter: blur(3px);
-		max-width: 600px;
-		margin: 0 auto;
 	}
 
 	.sheet {
