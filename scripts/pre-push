@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+echo "▶ biome check..."
+npm run check
+
+echo "▶ vitest..."
+npm test
+
+echo "▶ playwright..."
+npx playwright test
+
+echo "✓ all checks passed"

@@ -1,34 +1,40 @@
 <script lang="ts">
-	import type { CombatantType } from "@/entities/combatant";
-	import { encounterStore } from "@/entities/combatant";
+import type { CombatantSystem, CombatantType } from "@/entities/combatant";
+import { encounterStore } from "@/entities/combatant";
 
-	interface Props {
-		onClose: () => void;
-	}
+interface Props {
+	onClose: () => void;
+}
 
-	let { onClose }: Props = $props();
+const { onClose }: Props = $props();
 
-	let name = $state("");
-	let modifier = $state<number | null>(null);
-	let maxHp = $state(10);
-	let ac = $state<number | null>(null);
-	let combatantType = $state<CombatantType>("monster");
+let name = $state("");
+let system = $state<CombatantSystem>("classic");
+let combatantType = $state<CombatantType>("monster");
+let initMod = $state<number | null>(null);
+let maxHp = $state(10);
+let ac = $state<number | null>(null);
+let pd = $state<number | null>(null);
+let md = $state<number | null>(null);
 
-	function handleSubmit() {
-		if (!name.trim()) return;
-		encounterStore.addCombatant({
-			name: name.trim(),
-			modifier: modifier ?? 0,
-			type: combatantType,
-			maxHp,
-			ac,
-		});
-		onClose();
-	}
+function handleSubmit() {
+	if (!name.trim()) return;
+	encounterStore.addCombatant({
+		name: name.trim(),
+		system,
+		type: combatantType,
+		initMod: initMod ?? 0,
+		maxHp,
+		ac,
+		pd: pd ?? undefined,
+		md: md ?? undefined,
+	});
+	onClose();
+}
 
-	function handleOverlayClick(e: MouseEvent) {
-		if (e.target === e.currentTarget) onClose();
-	}
+function handleOverlayClick(e: MouseEvent) {
+	if (e.target === e.currentTarget) onClose();
+}
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -43,7 +49,7 @@
 			<label class="flabel" for="name">Name</label>
 			<input
 				id="name"
-				class="finput name"
+				class="finput finput-name"
 				type="text"
 				placeholder="Goblin Chief…"
 				bind:value={name}
@@ -51,34 +57,51 @@
 			/>
 		</div>
 
-		<!-- Type toggle -->
-		<div class="form-field">
-			<span class="flabel">Type</span>
-			<div class="type-row">
-				<button
-					class="type-opt"
-					class:m={combatantType === "monster"}
-					onclick={() => (combatantType = "monster")}
-				>Monster</button>
-				<button
-					class="type-opt"
-					class:p={combatantType === "pc"}
-					onclick={() => (combatantType = "pc")}
-				>Player</button>
+		<!-- System + Type -->
+		<div class="form-grid">
+			<div class="form-field">
+				<span class="flabel">System</span>
+				<div class="toggle-row">
+					<button
+						class="toggle-opt"
+						class:active={system === "classic"}
+						onclick={() => (system = "classic")}
+					>d20</button>
+					<button
+						class="toggle-opt"
+						class:active={system === "age"}
+						onclick={() => (system = "age")}
+					>13th Age</button>
+				</div>
+			</div>
+			<div class="form-field">
+				<span class="flabel">Type</span>
+				<div class="toggle-row">
+					<button
+						class="toggle-opt"
+						class:active-monster={combatantType === "monster"}
+						onclick={() => (combatantType = "monster")}
+					>Monster</button>
+					<button
+						class="toggle-opt"
+						class:active-pc={combatantType === "pc"}
+						onclick={() => (combatantType = "pc")}
+					>Player</button>
+				</div>
 			</div>
 		</div>
 
-		<!-- Initiative -->
+		<!-- Initiative Bonus -->
 		<div class="form-field">
-			<label class="flabel" for="modifier">Initiative Bonus</label>
+			<label class="flabel" for="initMod">Initiative Bonus</label>
 			<input
-				id="modifier"
+				id="initMod"
 				class="finput"
 				type="number"
 				placeholder="+0"
 				min="-50"
 				max="50"
-				bind:value={modifier}
+				bind:value={initMod}
 			/>
 		</div>
 
@@ -109,6 +132,36 @@
 			</div>
 		</div>
 
+		<!-- 13th Age: PD + MD -->
+		{#if system === "age"}
+			<div class="form-grid">
+				<div class="form-field">
+					<label class="flabel" for="pd">Physical Defense</label>
+					<input
+						id="pd"
+						class="finput"
+						type="number"
+						placeholder="10"
+						min="0"
+						max="50"
+						bind:value={pd}
+					/>
+				</div>
+				<div class="form-field">
+					<label class="flabel" for="md">Mental Defense</label>
+					<input
+						id="md"
+						class="finput"
+						type="number"
+						placeholder="10"
+						min="0"
+						max="50"
+						bind:value={md}
+					/>
+				</div>
+			</div>
+		{/if}
+
 		<!-- Actions -->
 		<div class="sheet-actions">
 			<button class="sheet-cancel" onclick={onClose}>Cancel</button>
@@ -138,7 +191,7 @@
 		padding: 16px 20px 36px;
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: 14px;
 	}
 
 	.sheet-handle {
@@ -190,7 +243,7 @@
 		transition: border-color 0.15s;
 	}
 
-	.finput.name {
+	.finput-name {
 		font-family: var(--font-serif);
 		font-size: 18px;
 	}
@@ -203,30 +256,37 @@
 		border-color: var(--border-hi);
 	}
 
-	.type-row {
+	.toggle-row {
 		display: flex;
-		gap: 7px;
+		gap: 5px;
 	}
 
-	.type-opt {
+	.toggle-opt {
 		flex: 1;
-		height: 46px;
-		border-radius: 11px;
+		height: 42px;
+		border-radius: 10px;
 		border: 1px solid var(--border);
 		background: var(--card);
-		font-size: 14px;
+		font-size: 13px;
 		font-weight: 600;
 		color: var(--text-muted);
 		transition: all 0.15s;
+		cursor: pointer;
 	}
 
-	.type-opt.p {
+	.toggle-opt.active {
+		color: var(--text);
+		border-color: var(--border-acc);
+		background: rgba(24, 19, 14, 0.06);
+	}
+
+	.toggle-opt.active-pc {
 		color: var(--player);
 		border-color: rgba(26, 74, 138, 0.4);
 		background: rgba(26, 74, 138, 0.07);
 	}
 
-	.type-opt.m {
+	.toggle-opt.active-monster {
 		color: var(--monster);
 		border-color: rgba(138, 26, 26, 0.4);
 		background: rgba(138, 26, 26, 0.07);
@@ -247,6 +307,7 @@
 		flex: 1;
 		border-radius: 12px;
 		transition: color 0.15s;
+		cursor: pointer;
 	}
 
 	.sheet-cancel:hover {
@@ -263,6 +324,7 @@
 		border-radius: 12px;
 		flex: 1;
 		transition: transform 0.1s, background 0.15s;
+		cursor: pointer;
 	}
 
 	.sheet-confirm:hover:not(:disabled) {

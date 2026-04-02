@@ -1,10 +1,17 @@
 import { get } from "svelte/store";
 import { beforeEach, describe, expect, it } from "vitest";
-import { encounterStore } from "./combatant";
+import { encounterStore, initTotal } from "./combatant";
 
-// Helper: add a monster with minimal required fields
-function addMonster(name: string, maxHp = 10, modifier = 0) {
-	encounterStore.addCombatant({ name, modifier, type: "monster", maxHp, ac: null });
+// Helper: add a classic monster with minimal required fields
+function addMonster(name: string, maxHp = 10, initMod = 0) {
+	encounterStore.addCombatant({
+		name,
+		system: "classic",
+		initMod,
+		type: "monster",
+		maxHp,
+		ac: null,
+	});
 }
 
 // Helper: get the id of a combatant by name
@@ -30,28 +37,29 @@ describe("addCombatant", () => {
 		expect(combatants[0]?.name).toBe("Goblin");
 	});
 
-	it("T-2: new combatant starts with initiative: null", () => {
+	it("T-2: new combatant starts with initRoll: null", () => {
 		addMonster("Goblin");
-		expect(get(encounterStore).combatants[0]?.initiative).toBeNull();
+		expect(get(encounterStore).combatants[0]?.initRoll).toBeNull();
 	});
 
-	it("T-3: combatants are sorted by initiative descending after setInitiative", () => {
+	it("T-3: combatants are sorted by initiative total descending after setInitiative", () => {
 		addMonster("A");
 		addMonster("B");
 		addMonster("C");
 		encounterStore.setInitiative(idOf("A"), 5);
 		encounterStore.setInitiative(idOf("B"), 15);
 		encounterStore.setInitiative(idOf("C"), 10);
-		const initiatives = get(encounterStore)
-			.combatants.filter((c) => c.initiative !== null)
-			.map((c) => c.initiative);
-		expect(initiatives).toEqual([15, 10, 5]);
+		const totals = get(encounterStore)
+			.combatants.filter((c) => c.initRoll !== null)
+			.map((c) => initTotal(c));
+		expect(totals).toEqual([15, 10, 5]);
 	});
 
 	it("T-4: new combatant starts with currentHp === maxHp", () => {
 		encounterStore.addCombatant({
 			name: "Fighter",
-			modifier: 0,
+			system: "classic",
+			initMod: 0,
 			type: "pc",
 			maxHp: 20,
 			ac: 16,
@@ -62,6 +70,25 @@ describe("addCombatant", () => {
 	it("T-5: new combatant starts with empty conditions array", () => {
 		addMonster("Goblin");
 		expect(get(encounterStore).combatants[0]?.conditions).toEqual([]);
+	});
+
+	it("T-5b: age combatant stores pd and md", () => {
+		encounterStore.addCombatant({
+			name: "Mage",
+			system: "age",
+			initMod: 2,
+			type: "monster",
+			maxHp: 30,
+			ac: 14,
+			pd: 12,
+			md: 18,
+		});
+		const c = get(encounterStore).combatants[0];
+		expect(c?.system).toBe("age");
+		if (c?.system === "age") {
+			expect(c.pd).toBe(12);
+			expect(c.md).toBe(18);
+		}
 	});
 });
 
@@ -168,7 +195,7 @@ describe("applyHeal", () => {
 	it("T-16: increases currentHp by the given amount", () => {
 		addMonster("Goblin", 10);
 		encounterStore.applyDamage(idOf("Goblin"), 4); // 10 → 6
-		encounterStore.applyHeal(idOf("Goblin"), 2);   // 6 → 8
+		encounterStore.applyHeal(idOf("Goblin"), 2); // 6 → 8
 		expect(get(encounterStore).combatants[0]?.currentHp).toBe(8);
 	});
 
@@ -214,7 +241,9 @@ describe("removeCondition", () => {
 		addMonster("Goblin");
 		encounterStore.addCondition(idOf("Goblin"), "Poisoned");
 		encounterStore.removeCondition(idOf("Goblin"), "Poisoned");
-		expect(get(encounterStore).combatants[0]?.conditions).not.toContain("Poisoned");
+		expect(get(encounterStore).combatants[0]?.conditions).not.toContain(
+			"Poisoned",
+		);
 	});
 
 	it("T-22: removing a non-existent condition is a no-op", () => {
@@ -264,5 +293,30 @@ describe("resetEncounter", () => {
 		encounterStore.nextTurn(); // wraps → round 2
 		encounterStore.resetEncounter();
 		expect(get(encounterStore).round).toBe(1);
+	});
+});
+
+// ─────────────────────────────────────────────
+// initTotal
+// ─────────────────────────────────────────────
+describe("initTotal", () => {
+	it("T-27: returns null when initRoll is null", () => {
+		addMonster("Goblin");
+		const c = get(encounterStore).combatants[0]!;
+		expect(initTotal(c)).toBeNull();
+	});
+
+	it("T-28: returns initRoll + initMod as total", () => {
+		encounterStore.addCombatant({
+			name: "Rogue",
+			system: "classic",
+			initMod: 3,
+			type: "pc",
+			maxHp: 20,
+			ac: 14,
+		});
+		encounterStore.setInitiative(idOf("Rogue"), 15); // total=15, so initRoll=15-3=12
+		const c = get(encounterStore).combatants.find((c) => c.name === "Rogue")!;
+		expect(initTotal(c)).toBe(15);
 	});
 });

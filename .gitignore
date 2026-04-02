@@ -30,3 +30,4 @@ dist-ssr
 /.plan/
 /screenshots/
 .vercel
+/.svelte-kit/

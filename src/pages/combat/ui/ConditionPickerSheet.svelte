@@ -1,29 +1,29 @@
 <script lang="ts">
-	import { CONDITIONS } from "@/entities/condition";
-	import { encounterStore } from "@/entities/combatant";
+import { encounterStore } from "@/entities/combatant";
+import { CONDITIONS } from "@/entities/condition";
 
-	interface Props {
-		combatantId: string;
-		onClose: () => void;
+interface Props {
+	combatantId: string;
+	onClose: () => void;
+}
+
+const { combatantId, onClose }: Props = $props();
+
+const state = $derived($encounterStore);
+const combatant = $derived(state.combatants.find((c) => c.id === combatantId));
+const activeConditions = $derived(combatant?.conditions ?? []);
+
+function toggleCondition(condition: string) {
+	if (activeConditions.includes(condition)) {
+		encounterStore.removeCondition(combatantId, condition);
+	} else {
+		encounterStore.addCondition(combatantId, condition);
 	}
+}
 
-	let { combatantId, onClose }: Props = $props();
-
-	let state = $derived($encounterStore);
-	let combatant = $derived(state.combatants.find((c) => c.id === combatantId));
-	let activeConditions = $derived(combatant?.conditions ?? []);
-
-	function toggleCondition(condition: string) {
-		if (activeConditions.includes(condition)) {
-			encounterStore.removeCondition(combatantId, condition);
-		} else {
-			encounterStore.addCondition(combatantId, condition);
-		}
-	}
-
-	function handleOverlayClick(e: MouseEvent) {
-		if (e.target === e.currentTarget) onClose();
-	}
+function handleOverlayClick(e: MouseEvent) {
+	if (e.target === e.currentTarget) onClose();
+}
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -33,7 +33,7 @@
 		<div class="sheet-handle"></div>
 		<h2 class="sheet-title">Conditions</h2>
 		<div class="cond-grid">
-			{#each CONDITIONS as condition}
+			{#each CONDITIONS as condition (condition)}
 				<button
 					class="cp-btn"
 					class:on={activeConditions.includes(condition)}
@@ -54,7 +54,7 @@
 		background: rgba(18, 14, 10, 0.55);
 		display: flex;
 		align-items: flex-end;
-		z-index: 100;
+		z-index: 200;
 		backdrop-filter: blur(3px);
 	}
 
@@ -100,6 +100,7 @@
 		font-weight: 500;
 		color: var(--text-mid);
 		transition: all 0.14s;
+		cursor: pointer;
 	}
 
 	.cp-btn.on {
@@ -122,6 +123,7 @@
 		height: 50px;
 		border-radius: 12px;
 		transition: transform 0.1s, background 0.15s;
+		cursor: pointer;
 	}
 
 	.done-btn:hover {

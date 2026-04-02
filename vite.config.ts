@@ -1,12 +1,11 @@
-import path from "node:path";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { sveltekit } from "@sveltejs/kit/vite";
+import { SvelteKitPWA } from "@vite-pwa/sveltekit";
 import { defineConfig } from "vite";
-import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
 	plugins: [
-		svelte(),
-		VitePWA({
+		sveltekit(),
+		SvelteKitPWA({
 			registerType: "autoUpdate",
 			includeAssets: ["favicon.ico"],
 			manifest: {
@@ -31,12 +30,4 @@ export default defineConfig({
 			},
 		}),
 	],
-	resolve: {
-		alias: {
-			"@/app": path.resolve(__dirname, "./src/app"),
-			"@/pages": path.resolve(__dirname, "./src/pages"),
-			"@/entities": path.resolve(__dirname, "./src/entities"),
-			"@/shared": path.resolve(__dirname, "./src/shared"),
-		},
-	},
 });

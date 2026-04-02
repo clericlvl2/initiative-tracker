@@ -1,52 +1,52 @@
 <script lang="ts">
-	import { encounterStore } from "@/entities/combatant";
-	import AddCombatantSheet from "./AddCombatantSheet.svelte";
-	import CombatantCard from "./CombatantCard.svelte";
-	import ConditionPickerSheet from "./ConditionPickerSheet.svelte";
+import { encounterStore } from "@/entities/combatant";
+import AddCombatantSheet from "./AddCombatantSheet.svelte";
+import CombatantDrawer from "./CombatantDrawer.svelte";
+import CombatantRow from "./CombatantRow.svelte";
+import ConditionPickerSheet from "./ConditionPickerSheet.svelte";
 
-	let state = $derived($encounterStore);
-	let showAddSheet = $state(false);
-	let conditionTargetId = $state<string | null>(null);
+const state = $derived($encounterStore);
+let showAddSheet = $state(false);
+let drawerCombatantId = $state<string | null>(null);
+let conditionTargetId = $state<string | null>(null);
 
-	let hasUnrolled = $derived(
-		state.combatants.length > 0 &&
-			state.combatants.some((c) => c.initiative === null),
-	);
+const drawerCombatant = $derived(
+	drawerCombatantId !== null
+		? (state.combatants.find((c) => c.id === drawerCombatantId) ?? null)
+		: null,
+);
 
-	function handleNextTurn() {
-		encounterStore.nextTurn();
+const hasAnyRolled = $derived(
+	state.combatants.some((c) => c.initRoll !== null),
+);
+const hasAnyUnrolled = $derived(
+	state.combatants.length > 0 &&
+		state.combatants.some((c) => c.initRoll === null),
+);
+
+function handleRowTap(id: string) {
+	drawerCombatantId = id;
+}
+
+function handleClear() {
+	if (confirm("Clear encounter and start fresh?")) {
+		encounterStore.resetEncounter();
 	}
-
-	function handleStartBattle() {
-		encounterStore.rollAllUnrolledInitiatives();
-	}
-
-	function handleClear() {
-		if (confirm("Clear encounter and start fresh?")) {
-			encounterStore.resetEncounter();
-		}
-	}
-
-	function handleCardTap(id: string) {
-		const s = $encounterStore;
-		const activeCombatant = s.combatants[s.currentTurnIndex];
-		if (activeCombatant?.id === id) return;
-		encounterStore.toggleExpanded(id);
-	}
+}
 </script>
 
 <div class="layout">
-	<!-- Top bar -->
 	<header class="top-bar">
-		<span class="app-name">Combat Planner</span>
+		<span class="app-name">Initiative</span>
 		<div class="round-chip" aria-live="polite" aria-label="Round {state.round}">
 			<span class="round-lbl">Round</span>
 			<span class="round-num">{state.round}</span>
 		</div>
-		<button class="end-btn" onclick={handleClear} aria-label="Clear encounter">Clear</button>
+		<button class="clear-btn" onclick={handleClear} aria-label="Clear encounter">
+			Clear
+		</button>
 	</header>
 
-	<!-- Combatant list -->
 	<main class="list" role="list" aria-label="Combatants">
 		{#if state.combatants.length === 0}
 			<div class="empty-state">
@@ -56,30 +56,29 @@
 		{:else}
 			{#each state.combatants as combatant, i (combatant.id)}
 				<div role="listitem">
-					<CombatantCard
+					<CombatantRow
 						{combatant}
 						isActive={i === state.currentTurnIndex}
-						onTap={() => handleCardTap(combatant.id)}
-						onAddCondition={() => (conditionTargetId = combatant.id)}
+						onTap={() => handleRowTap(combatant.id)}
 					/>
 				</div>
 			{/each}
 		{/if}
 	</main>
 
-	<!-- Bottom bar -->
 	<footer class="bottom-bar">
 		<button class="add-btn" onclick={() => (showAddSheet = true)} aria-label="Add combatant">
 			+ Add
 		</button>
-		{#if hasUnrolled}
-			<button class="action-btn battle" onclick={handleStartBattle}>
-				⚔ Start Battle
+		{#if hasAnyUnrolled}
+			<button class="action-btn" onclick={() => encounterStore.rollAllUnrolledInitiatives()}>
+				Roll All
 			</button>
-		{:else}
+		{/if}
+		{#if hasAnyRolled}
 			<button
-				class="action-btn"
-				onclick={handleNextTurn}
+				class="action-btn primary"
+				onclick={() => encounterStore.nextTurn()}
 				disabled={state.combatants.length === 0}
 				aria-label="Next turn"
 			>
@@ -88,9 +87,19 @@
 		{/if}
 	</footer>
 
-	<!-- Sheets rendered inside .layout so they're clipped to the app card on desktop -->
 	{#if showAddSheet}
 		<AddCombatantSheet onClose={() => (showAddSheet = false)} />
+	{/if}
+
+	{#if drawerCombatant !== null}
+		<CombatantDrawer
+			combatant={drawerCombatant}
+			onClose={() => (drawerCombatantId = null)}
+			onOpenConditions={() => {
+				conditionTargetId = drawerCombatantId;
+				drawerCombatantId = null;
+			}}
+		/>
 	{/if}
 
 	{#if conditionTargetId !== null}
@@ -167,7 +176,7 @@
 		line-height: 1;
 	}
 
-	.end-btn {
+	.clear-btn {
 		font-size: 12px;
 		font-weight: 500;
 		color: var(--text-muted);
@@ -178,7 +187,7 @@
 		transition: color 0.15s, border-color 0.15s;
 	}
 
-	.end-btn:hover {
+	.clear-btn:hover {
 		color: var(--accent);
 		border-color: var(--border-acc);
 	}
@@ -187,7 +196,7 @@
 	.list {
 		flex: 1;
 		overflow-y: auto;
-		padding: 10px 10px 4px;
+		padding: 8px 10px 4px;
 		overscroll-behavior: contain;
 		display: flex;
 		flex-direction: column;
@@ -206,7 +215,7 @@
 		border-radius: 2px;
 	}
 
-	/* Empty state — fills flex parent, centers content */
+	/* Empty state */
 	.empty-state {
 		flex: 1;
 		display: flex;
@@ -233,7 +242,7 @@
 	/* Bottom bar */
 	.bottom-bar {
 		display: flex;
-		gap: 10px;
+		gap: 8px;
 		padding: 10px 12px 28px;
 		background: var(--surface);
 		border-top: 1px solid var(--border);
@@ -260,25 +269,28 @@
 	.action-btn {
 		font-size: 14px;
 		font-weight: 600;
-		color: #ffffff;
-		background: var(--text);
-		border: 1px solid transparent;
+		color: var(--text-mid);
+		background: var(--bg);
+		border: 1px solid var(--border);
 		height: 48px;
-		border-radius: 12px;
 		flex: 1;
-		transition: background 0.15s, transform 0.1s;
-	}
-
-	.action-btn.battle {
-		background: #3a2a1a;
+		border-radius: 12px;
+		transition: all 0.15s;
 	}
 
 	.action-btn:hover:not(:disabled) {
-		background: #2a241e;
+		border-color: var(--border-hi);
+		color: var(--text);
 	}
 
-	.action-btn.battle:hover {
-		background: #4a3828;
+	.action-btn.primary {
+		color: #ffffff;
+		background: var(--text);
+		border-color: transparent;
+	}
+
+	.action-btn.primary:hover:not(:disabled) {
+		background: #2a241e;
 	}
 
 	.action-btn:active:not(:disabled) {
@@ -289,7 +301,6 @@
 		opacity: 0.4;
 	}
 
-	/* Focus rings */
 	:global(*:focus-visible) {
 		outline: 2px solid var(--accent);
 		outline-offset: 2px;

@@ -1,27 +1,43 @@
-import { persisted } from "svelte-persisted-store";
 import { get } from "svelte/store";
+import { persisted } from "svelte-persisted-store";
 import { nanoid } from "./nanoid";
 
 export type CombatantType = "pc" | "monster";
+export type CombatantSystem = "classic" | "age";
 
-export interface Combatant {
+interface CombatantBase {
 	id: string;
 	name: string;
-	initiative: number | null;
-	modifier: number;
 	type: CombatantType;
+	initRoll: number | null;
+	initMod: number;
 	maxHp: number;
 	currentHp: number;
 	ac: number | null;
 	conditions: string[];
 	notes: string;
-	isExpanded: boolean;
 }
+
+export interface ClassicCombatant extends CombatantBase {
+	system: "classic";
+}
+
+export interface AgeCombatant extends CombatantBase {
+	system: "age";
+	pd: number;
+	md: number;
+}
+
+export type Combatant = ClassicCombatant | AgeCombatant;
 
 export interface EncounterState {
 	combatants: Combatant[];
 	currentTurnIndex: number;
 	round: number;
+}
+
+export function initTotal(c: Combatant): number | null {
+	return c.initRoll !== null ? c.initRoll + c.initMod : null;
 }
 
 const DEFAULT_STATE: EncounterState = {
@@ -35,10 +51,12 @@ function clampHp(value: number, max: number): number {
 }
 
 function sortByInitiative(a: Combatant, b: Combatant): number {
-	if (a.initiative === null && b.initiative === null) return 0;
-	if (a.initiative === null) return 1;
-	if (b.initiative === null) return -1;
-	return b.initiative - a.initiative;
+	const ta = initTotal(a);
+	const tb = initTotal(b);
+	if (ta === null && tb === null) return 0;
+	if (ta === null) return 1;
+	if (tb === null) return -1;
+	return tb - ta;
 }
 
 function createEncounterStore() {
@@ -53,34 +71,46 @@ function createEncounterStore() {
 
 		addCombatant(params: {
 			name: string;
-			modifier: number;
+			system: CombatantSystem;
 			type: CombatantType;
+			initMod: number;
 			maxHp: number;
 			ac: number | null;
+			pd?: number;
+			md?: number;
 		}) {
 			update((s) => {
-				const battleStarted = s.combatants.some((c) => c.initiative !== null);
-				const initiative = battleStarted
-					? Math.floor(Math.random() * 20) + 1 + params.modifier
+				const battleStarted = s.combatants.some((c) => c.initRoll !== null);
+				const initRoll = battleStarted
+					? Math.floor(Math.random() * 20) + 1
 					: null;
+
+				const base: CombatantBase = {
+					id: nanoid(),
+					name: params.name,
+					type: params.type,
+					initRoll,
+					initMod: params.initMod,
+					maxHp: params.maxHp,
+					currentHp: params.maxHp,
+					ac: params.ac,
+					conditions: [],
+					notes: "",
+				};
+
+				const combatant: Combatant =
+					params.system === "age"
+						? {
+								...base,
+								system: "age",
+								pd: params.pd ?? 10,
+								md: params.md ?? 10,
+							}
+						: { ...base, system: "classic" };
+
 				return {
 					...s,
-					combatants: [
-						...s.combatants,
-						{
-							id: nanoid(),
-							name: params.name,
-							initiative,
-							modifier: params.modifier,
-							type: params.type,
-							maxHp: params.maxHp,
-							currentHp: params.maxHp,
-							ac: params.ac,
-							conditions: [],
-							notes: "",
-							isExpanded: false,
-						},
-					].sort(sortByInitiative),
+					combatants: [...s.combatants, combatant].sort(sortByInitiative),
 				};
 			});
 		},
@@ -90,19 +120,19 @@ function createEncounterStore() {
 				...s,
 				combatants: s.combatants
 					.map((c) =>
-						c.initiative === null
-							? { ...c, initiative: Math.floor(Math.random() * 20) + 1 + c.modifier }
+						c.initRoll === null
+							? { ...c, initRoll: Math.floor(Math.random() * 20) + 1 }
 							: c,
 					)
 					.sort(sortByInitiative),
 			}));
 		},
 
-		setInitiative(id: string, initiative: number) {
+		setInitiative(id: string, total: number) {
 			update((s) => ({
 				...s,
 				combatants: s.combatants
-					.map((c) => (c.id === id ? { ...c, initiative } : c))
+					.map((c) => (c.id === id ? { ...c, initRoll: total - c.initMod } : c))
 					.sort(sortByInitiative),
 			}));
 		},
@@ -116,18 +146,17 @@ function createEncounterStore() {
 				for (const c of s.combatants) {
 					if (c.name === baseName || c.name.startsWith(`${baseName} `)) {
 						const suffix = parseInt(c.name.slice(baseName.length).trim(), 10);
-						if (!isNaN(suffix) && suffix > maxSuffix) maxSuffix = suffix;
+						if (!Number.isNaN(suffix) && suffix > maxSuffix) maxSuffix = suffix;
 					}
 				}
 				const copy: Combatant = {
 					...source,
 					id: nanoid(),
 					name: `${baseName} ${maxSuffix + 1}`,
-					initiative: null,
+					initRoll: null,
 					currentHp: source.maxHp,
 					conditions: [],
 					notes: "",
-					isExpanded: false,
 				};
 				return {
 					...s,
@@ -218,22 +247,6 @@ function createEncounterStore() {
 				combatants: s.combatants.map((c) =>
 					c.id === id ? { ...c, notes: note } : c,
 				),
-			}));
-		},
-
-		toggleExpanded(id: string) {
-			update((s) => ({
-				...s,
-				combatants: s.combatants.map((c) =>
-					c.id === id ? { ...c, isExpanded: !c.isExpanded } : c,
-				),
-			}));
-		},
-
-		collapseAll() {
-			update((s) => ({
-				...s,
-				combatants: s.combatants.map((c) => ({ ...c, isExpanded: false })),
 			}));
 		},
 

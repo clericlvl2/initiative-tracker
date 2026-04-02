@@ -1,27 +1,12 @@
 {
+	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": {
 		"exactOptionalPropertyTypes": true,
-		"lib": ["ES2020", "DOM", "DOM.Iterable"],
-		"module": "ESNext",
-		"moduleResolution": "bundler",
 		"noUncheckedIndexedAccess": true,
 		"noUncheckedSideEffectImports": true,
-		"paths": {
-			"@/app": ["./src/app"],
-			"@/app/*": ["./src/app/*"],
-			"@/pages": ["./src/pages"],
-			"@/pages/*": ["./src/pages/*"],
-			"@/entities": ["./src/entities"],
-			"@/entities/*": ["./src/entities/*"],
-			"@/shared": ["./src/shared"],
-			"@/shared/*": ["./src/shared/*"]
-		},
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
-		"target": "ES2020",
-		"types": ["node"],
-		"verbatimModuleSyntax": true
-	},
-	"include": ["src/**/*.ts", "src/**/*.svelte"]
+		"types": ["node"]
+	}
 }
