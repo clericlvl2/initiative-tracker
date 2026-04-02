@@ -1,8 +1,8 @@
-# Initiative Tracker — CLAUDE.md
+# Combat Planner — CLAUDE.md
 
 ## What This App Is
 
-A combat initiative tracker for tabletop RPGs (d20/OSR and 13th Age systems). Used by a Dungeon Master at the table to manage turn order, hit points, and conditions during combat encounters. Mobile-first, installable as a PWA, works offline.
+A combat planner for tabletop RPGs (d20 systems). Used by a Dungeon Master at the table to manage turn order, hit points, and conditions during combat encounters. Mobile-first, installable as a PWA, works offline.
 
 ---
 
@@ -21,31 +21,19 @@ A combat initiative tracker for tabletop RPGs (d20/OSR and 13th Age systems). Us
 
 ---
 
-## UX Intent
-
-- **Single combat screen** — a row-based list of combatants, always fully visible, sorted by initiative.
-- Each row shows: initiative, name, type badge, HP bar + numbers, defense stats, conditions (if any).
-- Tapping a row opens a **bottom drawer** with all controls: DMG/HEAL toggle + 1/2/3/5/10 buttons, conditions, notes, duplicate, remove.
-- **Bottom bar:** `[+ Add]` and `[Next Turn →]` / `[Roll All]`. Nothing else.
-- No "Start Battle" mode — the list is always live. `[Roll All]` fills missing initiatives only, never overwrites. `[Next Turn →]` appears once ≥1 combatant has initiative.
-- Adding mid-fight auto-rolls initiative and slots into correct position.
-- The UI should feel like a **physical GM tool** — functional, fast, no decorative friction.
-
----
-
 ## Tech Stack
 
-| Layer         | Technology                            |
-|---------------|---------------------------------------|
-| Framework     | SvelteKit                             |
-| Language      | TypeScript (strict)                   |
-| UI components | shadcn-svelte (all components)        |
-| Styling       | Tailwind CSS                          |
-| State         | svelte-persisted-store (localStorage) |
-| Lint/format   | Biome                                 |
-| Unit tests    | Vitest + @testing-library/svelte      |
-| E2E tests     | Playwright                            |
-| Deployment    | Vercel (@sveltejs/adapter-vercel)     |
+| Layer         | Technology                        |
+|---------------|-----------------------------------|
+| Framework     | SvelteKit                         |
+| Language      | TypeScript                        |
+| UI components | shadcn-svelte                     |
+| Styling       | Tailwind CSS                      |
+| State         | svelte-persisted-store            |
+| Lint/format   | Biome                             |
+| Unit tests    | Vitest + @testing-library/svelte  |
+| E2E tests     | Playwright                        |
+| Deployment    | Vercel (@sveltejs/adapter-vercel) |
 
 ---
 
@@ -56,38 +44,29 @@ src/
   entities/
     combatant/
       model/
-        combatant.ts        # Combatant types (discriminated union) + store
+        combatant.ts
         combatant.test.ts
         nanoid.ts
       index.ts
     condition/
-      model/condition.ts    # D&D condition constants
+      model/condition.ts
       index.ts
   pages/
     combat/
       ui/
-        CombatPage.svelte
-        CombatantRow.svelte
-        CombatantDrawer.svelte
-        AddCombatantSheet.svelte
-        ConditionPickerSheet.svelte
+        CombatPage.svelte (Empty)
       index.ts
   shared/
     lib/
     ui/
   routes/
-    +page.svelte            # Combat page
+    +page.svelte
     +layout.svelte
   app.html
   hooks.client.ts
 ```
 
 **Path aliases:** `@/pages`, `@/entities`, `@/shared`
-
-**Data model:** see `src/entities/combatant/model/combatant.ts`
-— Combatant is a discriminated union: `ClassicCombatant | AgeCombatant`
-— Initiative split into `initRoll: number | null` and `initMod: number`
-— System profiles: `"classic"` (D&D/OSR — AC only) and `"age"` (13th Age — AC, PD, MD)
 
 ---
 
@@ -112,7 +91,7 @@ npm run preview      # preview production build locally
 npm run check        # biome lint + format check (read-only)
 npm run lint         # biome lint --write
 npm run format       # biome format --write
-npm test             # vitest run
+npm run test         # vitest run
 npx playwright test  # e2e tests
 ```
 

@@ -2,15 +2,16 @@ import { get } from "svelte/store";
 import { beforeEach, describe, expect, it } from "vitest";
 import { encounterStore, initTotal } from "./combatant";
 
-// Helper: add a classic monster with minimal required fields
+// Helper: add a monster with minimal required fields
 function addMonster(name: string, maxHp = 10, initMod = 0) {
 	encounterStore.addCombatant({
 		name,
-		system: "classic",
 		initMod,
 		type: "monster",
 		maxHp,
 		ac: null,
+		pd: 10,
+		md: 10,
 	});
 }
 
@@ -58,11 +59,12 @@ describe("addCombatant", () => {
 	it("T-4: new combatant starts with currentHp === maxHp", () => {
 		encounterStore.addCombatant({
 			name: "Fighter",
-			system: "classic",
 			initMod: 0,
 			type: "pc",
 			maxHp: 20,
 			ac: 16,
+			pd: 14,
+			md: 12,
 		});
 		expect(get(encounterStore).combatants[0]?.currentHp).toBe(20);
 	});
@@ -72,10 +74,9 @@ describe("addCombatant", () => {
 		expect(get(encounterStore).combatants[0]?.conditions).toEqual([]);
 	});
 
-	it("T-5b: age combatant stores pd and md", () => {
+	it("T-5b: combatant stores pd and md", () => {
 		encounterStore.addCombatant({
 			name: "Mage",
-			system: "age",
 			initMod: 2,
 			type: "monster",
 			maxHp: 30,
@@ -84,11 +85,8 @@ describe("addCombatant", () => {
 			md: 18,
 		});
 		const c = get(encounterStore).combatants[0];
-		expect(c?.system).toBe("age");
-		if (c?.system === "age") {
-			expect(c.pd).toBe(12);
-			expect(c.md).toBe(18);
-		}
+		expect(c?.pd).toBe(12);
+		expect(c?.md).toBe(18);
 	});
 });
 
@@ -309,11 +307,12 @@ describe("initTotal", () => {
 	it("T-28: returns initRoll + initMod as total", () => {
 		encounterStore.addCombatant({
 			name: "Rogue",
-			system: "classic",
 			initMod: 3,
 			type: "pc",
 			maxHp: 20,
 			ac: 14,
+			pd: 12,
+			md: 16,
 		});
 		encounterStore.setInitiative(idOf("Rogue"), 15); // total=15, so initRoll=15-3=12
 		const c = get(encounterStore).combatants.find((c) => c.name === "Rogue")!;

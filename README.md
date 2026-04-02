@@ -1,6 +1,6 @@
-# D20 Combat Planner
+# Combat Planner
 
-Initiative tracker for D&D, Pathfinder, OSE, Shadowdark, and other d20 TTRPGs.
+Combat planner for D&D, Pathfinder, OSE, Shadowdark, and other d20 TTRPGs.
 
 **Live:** https://d20-combat-planner.vercel.app
 

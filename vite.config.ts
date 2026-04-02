@@ -9,9 +9,9 @@ export default defineConfig({
 			registerType: "autoUpdate",
 			includeAssets: ["favicon.ico"],
 			manifest: {
-				name: "Initiative Tracker",
-				short_name: "Initiative",
-				description: "Combat initiative tracker for d20 and OSR TTRPGs",
+				name: "Combat planner",
+				short_name: "combat-planner",
+				description: "Combat planner for d20 TTRPGs",
 				theme_color: "#EDEAE4",
 				background_color: "#EDEAE4",
 				display: "standalone",
