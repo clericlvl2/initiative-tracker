@@ -31,3 +31,4 @@ dist-ssr
 /screenshots/
 .vercel
 /.svelte-kit/
+/test-results/
