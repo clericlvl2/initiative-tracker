@@ -3,9 +3,8 @@ import { persisted } from "svelte-persisted-store";
 import { nanoid } from "./nanoid";
 
 export type CombatantType = "pc" | "monster";
-export type CombatantSystem = "classic" | "age";
 
-interface CombatantBase {
+export interface Combatant {
 	id: string;
 	name: string;
 	type: CombatantType;
@@ -14,21 +13,11 @@ interface CombatantBase {
 	maxHp: number;
 	currentHp: number;
 	ac: number | null;
+	pd: number;
+	md: number;
 	conditions: string[];
 	notes: string;
 }
-
-export interface ClassicCombatant extends CombatantBase {
-	system: "classic";
-}
-
-export interface AgeCombatant extends CombatantBase {
-	system: "age";
-	pd: number;
-	md: number;
-}
-
-export type Combatant = ClassicCombatant | AgeCombatant;
 
 export interface EncounterState {
 	combatants: Combatant[];
@@ -71,13 +60,12 @@ function createEncounterStore() {
 
 		addCombatant(params: {
 			name: string;
-			system: CombatantSystem;
 			type: CombatantType;
 			initMod: number;
 			maxHp: number;
 			ac: number | null;
-			pd?: number;
-			md?: number;
+			pd: number;
+			md: number;
 		}) {
 			update((s) => {
 				const battleStarted = s.combatants.some((c) => c.initRoll !== null);
@@ -85,7 +73,7 @@ function createEncounterStore() {
 					? Math.floor(Math.random() * 20) + 1
 					: null;
 
-				const base: CombatantBase = {
+				const combatant: Combatant = {
 					id: nanoid(),
 					name: params.name,
 					type: params.type,
@@ -94,19 +82,11 @@ function createEncounterStore() {
 					maxHp: params.maxHp,
 					currentHp: params.maxHp,
 					ac: params.ac,
+					pd: params.pd,
+					md: params.md,
 					conditions: [],
 					notes: "",
 				};
-
-				const combatant: Combatant =
-					params.system === "age"
-						? {
-								...base,
-								system: "age",
-								pd: params.pd ?? 10,
-								md: params.md ?? 10,
-							}
-						: { ...base, system: "classic" };
 
 				return {
 					...s,

@@ -135,16 +135,14 @@ function commitInit() {
 				<span class="stat-lbl">AC</span>
 			</div>
 		{/if}
-		{#if combatant.system === "age"}
-			<div class="stat">
-				<span class="stat-val">{combatant.pd}</span>
-				<span class="stat-lbl">PD</span>
-			</div>
-			<div class="stat">
-				<span class="stat-val">{combatant.md}</span>
-				<span class="stat-lbl">MD</span>
-			</div>
-		{/if}
+		<div class="stat">
+			<span class="stat-val">{combatant.pd}</span>
+			<span class="stat-lbl">PD</span>
+		</div>
+		<div class="stat">
+			<span class="stat-val">{combatant.md}</span>
+			<span class="stat-lbl">MD</span>
+		</div>
 	</div>
 </div>
 

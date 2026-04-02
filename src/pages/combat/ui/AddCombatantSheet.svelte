@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { CombatantSystem, CombatantType } from "@/entities/combatant";
+import type { CombatantType } from "@/entities/combatant";
 import { encounterStore } from "@/entities/combatant";
 
 interface Props {
@@ -9,7 +9,6 @@ interface Props {
 const { onClose }: Props = $props();
 
 let name = $state("");
-let system = $state<CombatantSystem>("classic");
 let combatantType = $state<CombatantType>("monster");
 let initMod = $state<number | null>(null);
 let maxHp = $state(10);
@@ -21,13 +20,12 @@ function handleSubmit() {
 	if (!name.trim()) return;
 	encounterStore.addCombatant({
 		name: name.trim(),
-		system,
 		type: combatantType,
 		initMod: initMod ?? 0,
 		maxHp,
 		ac,
-		pd: pd ?? undefined,
-		md: md ?? undefined,
+		pd: pd ?? 10,
+		md: md ?? 10,
 	});
 	onClose();
 }
@@ -57,37 +55,20 @@ function handleOverlayClick(e: MouseEvent) {
 			/>
 		</div>
 
-		<!-- System + Type -->
-		<div class="form-grid">
-			<div class="form-field">
-				<span class="flabel">System</span>
-				<div class="toggle-row">
-					<button
-						class="toggle-opt"
-						class:active={system === "classic"}
-						onclick={() => (system = "classic")}
-					>d20</button>
-					<button
-						class="toggle-opt"
-						class:active={system === "age"}
-						onclick={() => (system = "age")}
-					>13th Age</button>
-				</div>
-			</div>
-			<div class="form-field">
-				<span class="flabel">Type</span>
-				<div class="toggle-row">
-					<button
-						class="toggle-opt"
-						class:active-monster={combatantType === "monster"}
-						onclick={() => (combatantType = "monster")}
-					>Monster</button>
-					<button
-						class="toggle-opt"
-						class:active-pc={combatantType === "pc"}
-						onclick={() => (combatantType = "pc")}
-					>Player</button>
-				</div>
+		<!-- Type -->
+		<div class="form-field">
+			<span class="flabel">Type</span>
+			<div class="toggle-row">
+				<button
+					class="toggle-opt"
+					class:active-monster={combatantType === "monster"}
+					onclick={() => (combatantType = "monster")}
+				>Monster</button>
+				<button
+					class="toggle-opt"
+					class:active-pc={combatantType === "pc"}
+					onclick={() => (combatantType = "pc")}
+				>Player</button>
 			</div>
 		</div>
 
@@ -132,35 +113,33 @@ function handleOverlayClick(e: MouseEvent) {
 			</div>
 		</div>
 
-		<!-- 13th Age: PD + MD -->
-		{#if system === "age"}
-			<div class="form-grid">
-				<div class="form-field">
-					<label class="flabel" for="pd">Physical Defense</label>
-					<input
-						id="pd"
-						class="finput"
-						type="number"
-						placeholder="10"
-						min="0"
-						max="50"
-						bind:value={pd}
-					/>
-				</div>
-				<div class="form-field">
-					<label class="flabel" for="md">Mental Defense</label>
-					<input
-						id="md"
-						class="finput"
-						type="number"
-						placeholder="10"
-						min="0"
-						max="50"
-						bind:value={md}
-					/>
-				</div>
+		<!-- PD + MD -->
+		<div class="form-grid">
+			<div class="form-field">
+				<label class="flabel" for="pd">Physical Defense</label>
+				<input
+					id="pd"
+					class="finput"
+					type="number"
+					placeholder="10"
+					min="0"
+					max="50"
+					bind:value={pd}
+				/>
 			</div>
-		{/if}
+			<div class="form-field">
+				<label class="flabel" for="md">Mental Defense</label>
+				<input
+					id="md"
+					class="finput"
+					type="number"
+					placeholder="10"
+					min="0"
+					max="50"
+					bind:value={md}
+				/>
+			</div>
+		</div>
 
 		<!-- Actions -->
 		<div class="sheet-actions">
@@ -272,12 +251,6 @@ function handleOverlayClick(e: MouseEvent) {
 		color: var(--text-muted);
 		transition: all 0.15s;
 		cursor: pointer;
-	}
-
-	.toggle-opt.active {
-		color: var(--text);
-		border-color: var(--border-acc);
-		background: rgba(24, 19, 14, 0.06);
 	}
 
 	.toggle-opt.active-pc {

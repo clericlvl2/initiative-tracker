@@ -1,8 +1,5 @@
 export type {
-	AgeCombatant,
-	ClassicCombatant,
 	Combatant,
-	CombatantSystem,
 	CombatantType,
 	EncounterState,
 } from "./model/combatant";

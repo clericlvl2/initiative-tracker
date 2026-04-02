@@ -96,7 +96,7 @@ src/
 - **Svelte 5 runes** — use `$state`, `$derived`, `$effect`. No legacy `writable()` in components.
 - **Store pattern** — all mutations go through store methods. Components never mutate state directly.
 - **Thin UI layer** — no business logic in `.svelte` files.
-- **TypeScript strict** — no `any`, no implicit types. Always narrow `Combatant` union before accessing system-specific fields.
+- **TypeScript strict** — no `any`, no implicit types
 - **Biome** — single tool for lint + format. Run `npm run check` before committing.
 - **No dead code** — if it's unused, delete it.
 - **shadcn-svelte for everything** — no custom primitives. Themed to warm/parchment color scheme.
@@ -120,13 +120,7 @@ npx playwright test  # e2e tests
 
 ## Roadmap
 
-| Step | Status | Description                                                                  |
-|------|--------|------------------------------------------------------------------------------|
-| 1    | ✅ Done | CLAUDE.md                                                                    |
-| 2    | ✅ Done | SvelteKit migration + Playwright setup                                       |
-| 3    | ✅ Next | Full combat page rebuild (new data model, shadcn-svelte, row layout, drawer) |
-| 4    | ✅ Done | Pre-push git hook (biome + vitest + playwright)                              |
-| 5    | ⬜      | Vercel Analytics + Sentry                                                    |
-| 6    | ⬜      | Multi-page nav (sidebar, Combat / Library / Settings routes)                 |
-| 7    | ⬜      | Monster library (save, browse, pick when adding combatant)                   |
-| 8    | ⬜      | Battle templates (save / load encounter from sidebar)                        |
+| Step | Description                                                  |
+|------|--------------------------------------------------------------|
+| 1    | Creatures library (save, browse, pick when adding combatant) |
+| 2    | Encounter presets (save / load ready to go encounter)        |
